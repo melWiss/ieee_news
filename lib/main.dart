@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
+import 'package:ieee_news/api.dart';
+import 'package:ieee_news/ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() {
@@ -31,20 +33,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int index = 0;
-  String url = 'http://newsapi.org/v2/top-headlines?' +
-      'country=us&' +
-      'apiKey=f599cb8706914e578b866c0d0dc58a4f';
-
-  Future<Map> fetchApi() async {
-    var response = await http.get(url);
-    var data = jsonDecode(response.body);
-    return data;
-  }
+  Api api;
 
   @override
   void initState() {
     super.initState();
-    //fetchApi().then((value) => print(value));
+    api = Api();
   }
 
   @override
@@ -52,7 +46,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Hello World",
+          "IEEE News",
           style: TextStyle(color: Colors.blue),
         ),
         elevation: 2,
@@ -62,32 +56,25 @@ class _HomePageState extends State<HomePage> {
           color: Colors.blue,
         ),
       ),
-      body: FutureBuilder<Map>(
-        future: fetchApi(),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.done) {
-            return ListView.builder(
-              itemCount: snap.data['totalResults'],
-              itemBuilder: (context, index) {
-                return NewsCard(
-                  details: snap.data["articles"][index]["content"] != null
-                      ? snap.data["articles"][index]["content"]
-                      : "",
-                  title: snap.data["articles"][index]["title"] != null
-                      ? snap.data["articles"][index]["title"]
-                      : "",
-                  imageUrl: snap.data["articles"][index]["urlToImage"] != null
-                      ? snap.data["articles"][index]["urlToImage"]
-                      : "",
-                  url: snap.data["articles"][index]["url"] != null
-                      ? snap.data["articles"][index]["url"]
-                      : "",
-                );
-              },
-            );
-          } else
-            return Center(child: CircularProgressIndicator());
-        },
+      body: StreamWidget<Map>(
+        stream: api.apiStream,
+        widget: (data) => ListView.builder(
+          itemCount: data.length,
+          itemBuilder: (context, index) => NewsCard(
+            details: data["articles"][index]["content"] != null
+                ? data["articles"][index]["content"]
+                : "",
+            title: data["articles"][index]["title"] != null
+                ? data["articles"][index]["title"]
+                : "",
+            imageUrl: data["articles"][index]["urlToImage"] != null
+                ? data["articles"][index]["urlToImage"]
+                : "",
+            url: data["articles"][index]["url"] != null
+                ? data["articles"][index]["url"]
+                : "",
+          ),
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.blue,
