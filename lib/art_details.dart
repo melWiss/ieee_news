@@ -1,18 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:ieee_news/api.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'ui.dart';
 
 class NewsDetail extends StatelessWidget {
   final String title;
   final String details;
   final String imageUrl;
   final String url;
-  NewsDetail({this.details, this.imageUrl, this.title, this.url});
-
+  final Map data;
+  NewsDetail({
+    this.details,
+    this.imageUrl,
+    this.title,
+    this.url,
+    @required this.data,
+  });
   @override
   Widget build(BuildContext context) {
+    api.getData();
     return Scaffold(
       appBar: AppBar(
-        //TODO: add a button to save the current article
+        //DONE: add a button to save the current article
+        actions: [
+          StreamWidget<Map>(
+            stream: api.dbStream,
+            widget: (context, snap) {
+              if (snap.containsKey(url)) {
+                return IconButton(
+                  icon: Icon(Icons.save),
+                  onPressed: () {
+                    api.deleteData(data);
+                  },
+                );
+              } else {
+                return IconButton(
+                  icon: Icon(Icons.save_outlined),
+                  onPressed: () {
+                    api.addData(data);
+                  },
+                );
+              }
+            },
+          ),
+        ],
         title: Text(
           title,
           style: TextStyle(

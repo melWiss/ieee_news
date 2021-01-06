@@ -28,12 +28,19 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int index = 0;
-  Api api;
+  PageController pageController;
 
   @override
   void initState() {
     super.initState();
-    api = Api();
+    pageController = PageController(initialPage: index);
+  }
+
+  @override
+  void dispose() {
+    //DONE: implement dispose
+    super.dispose();
+    api.dispose();
   }
 
   @override
@@ -51,32 +58,88 @@ class _HomePageState extends State<HomePage> {
           color: Colors.blue,
         ),
       ),
-      body: StreamWidget<Map>(
-        stream: api.apiStream,
-        widget: (data) {
-          if (data.containsKey("articles"))
-            return ListView.builder(
-              itemCount: data.length,
-              itemBuilder: (context, index) => NewsCard(
-                details: data["articles"][index]["content"] != null
-                    ? data["articles"][index]["content"]
-                    : "",
-                title: data["articles"][index]["title"] != null
-                    ? data["articles"][index]["title"]
-                    : "",
-                imageUrl: data["articles"][index]["urlToImage"] != null
-                    ? data["articles"][index]["urlToImage"]
-                    : "",
-                url: data["articles"][index]["url"] != null
-                    ? data["articles"][index]["url"]
-                    : "",
-              ),
-            );
-          else
-            return Center(
-              child: Text("No saved article avaiable"),
-            );
+      body: PageView(
+        onPageChanged: (i) {
+          setState(() {
+            index = i;
+            api.switchData(index);
+          });
         },
+        controller: pageController,
+        children: [
+          StreamWidget<Map>(
+            stream: api.apiStream,
+            widget: (context, data) {
+              if (data.isNotEmpty) {
+                return ListView.builder(
+                    itemCount: data.length,
+                    itemBuilder: (context, index) {
+                      var d = {
+                        data.keys.toList()[index]:
+                            data[data.keys.toList()[index]],
+                      };
+                      return NewsCard(
+                        details:
+                            data[data.keys.toList()[index]]["content"] != null
+                                ? data[data.keys.toList()[index]]["content"]
+                                : "",
+                        title: data[data.keys.toList()[index]]["title"] != null
+                            ? data[data.keys.toList()[index]]["title"]
+                            : "",
+                        imageUrl: data[data.keys.toList()[index]]
+                                    ["urlToImage"] !=
+                                null
+                            ? data[data.keys.toList()[index]]["urlToImage"]
+                            : "",
+                        url: data[data.keys.toList()[index]]["url"] != null
+                            ? data[data.keys.toList()[index]]["url"]
+                            : "",
+                        data: d,
+                      );
+                    });
+              } else
+                return Center(
+                  child: Text("No articles avaiable"),
+                );
+            },
+          ),
+          StreamWidget<Map>(
+            stream: api.dbStream,
+            widget: (context, data) {
+              if (data.isNotEmpty) {
+                return ListView.builder(
+                    itemCount: data.length,
+                    itemBuilder: (context, index) {
+                      var d = {
+                        data.keys.toList()[index]:
+                            data[data.keys.toList()[index]],
+                      };
+                      return NewsCard(
+                        details:
+                            data[data.keys.toList()[index]]["content"] != null
+                                ? data[data.keys.toList()[index]]["content"]
+                                : "",
+                        title: data[data.keys.toList()[index]]["title"] != null
+                            ? data[data.keys.toList()[index]]["title"]
+                            : "",
+                        imageUrl: data[data.keys.toList()[index]]
+                                    ["urlToImage"] !=
+                                null
+                            ? data[data.keys.toList()[index]]["urlToImage"]
+                            : "",
+                        url: data[data.keys.toList()[index]]["url"] != null
+                            ? data[data.keys.toList()[index]]["url"]
+                            : "",
+                        data: d,
+                      );
+                    });
+              } else
+                return Center(
+                  child: Text("No saved article avaiable"),
+                );
+            },
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Colors.blue,
@@ -85,7 +148,9 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             index = value;
             api.switchData(index);
-            print(index);
+            pageController.animateToPage(index,
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeInOutExpo);
           });
         },
         items: [

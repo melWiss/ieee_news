@@ -4,56 +4,98 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:sembast/sembast.dart';
 import 'package:sembast/sembast_io.dart';
+import 'package:sembast_web/sembast_web.dart';
 
 class Api {
-  Map init = {};
-  StreamController<Map> _streamController = StreamController<Map>();
-  Stream<Map> get apiStream => _streamController.stream;
-  StreamSink<Map> get _apiSink => _streamController.sink;
+  Map _initApi = {};
+  Map _initDb = {};
+  // DONE: subdivide streamController into apiStreamController and dbStreamController
+  StreamController<Map> _apiStreamController =
+      StreamController<Map>.broadcast();
+  Stream<Map> get apiStream => _apiStreamController.stream;
+  StreamSink<Map> get _apiSink => _apiStreamController.sink;
+  Map get getCurrentApi => _initApi;
 
-  String _dbPath = 'articles.db';
-  DatabaseFactory _dbFactory = databaseFactoryIo;
+  StreamController<Map> _dbStreamController = StreamController<Map>.broadcast();
+  Stream<Map> get dbStream => _dbStreamController.stream;
+  StreamSink<Map> get _dbSink => _dbStreamController.sink;
+  Map get getCurrentDb => _initDb;
+
+  String _dbPath = 'articles.json';
+  DatabaseFactory _dbFactory = !kIsWeb ? databaseFactoryIo : databaseFactoryWeb;
 
   Api() {
-    _apiSink.add(init);
-    _fetchApi();
+    _dbSink.add(_initDb);
+    _apiSink.add(_initApi);
+    fetchApi();
+    getData();
   }
 
-  Future<Map> _fetchApi() async {
+  Future<Map> fetchApi() async {
+    _apiSink.add(null);
     String url = 'http://newsapi.org/v2/top-headlines?' +
         'country=us&' +
         'apiKey=f599cb8706914e578b866c0d0dc58a4f';
     var response = await http.get(url);
     var data = jsonDecode(response.body);
-    _apiSink.add(data);
-    return data;
+    //DONE: reformulate data after getting it from the api
+    List articles = data['articles'];
+    var result = {};
+    articles.forEach((element) {
+      result.addAll({element["url"]: element});
+    });
+    _initApi = result;
+    _apiSink.add(_initApi);
+    return _initApi;
   }
 
-  //TODO: add a method to get data from database
-  Future<Map> _getData() async {
+  //DONE: add a method to get data from database
+  Future<Map> getData() async {
+    _dbSink.add(null);
     Database db = await _dbFactory.openDatabase(_dbPath);
     var store = StoreRef.main();
     var data = await store.record("data").get(db) as Map;
     if (data == null) data = {};
-    _apiSink.add(data);
-    return data;
+    _initDb = data;
+    _dbSink.add(_initDb);
+    return _initDb;
   }
 
-  //TODO: add a method to add datat to database
-  Future addData(Map data) async {
+  //DONE: add a method to add datat to database
+  Future<Map> addData(Map data, {bool merge = true}) async {
     Database db = await _dbFactory.openDatabase(_dbPath);
     var store = StoreRef.main();
-    await store.record("data").put(db, data);
+    await store.record("data").put(db, data, merge: merge);
+    return await getData();
   }
 
-  //TODO: add a data selector method
+  //DONE: add a method to delete data from database
+  Future<Map> deleteData(Map data) async {
+    Database db = await _dbFactory.openDatabase(_dbPath);
+    var store = StoreRef.main();
+    var saved = {};
+    saved.addAll(await store.record("data").get(db) as Map);
+    saved.remove(data.keys.first);
+    return await addData(saved, merge: false);
+  }
+
+  //DONE: add a data selector method
+  ///use other streams instead
   switchData(int index) {
     if (index == 0)
-      _fetchApi();
+      fetchApi();
     else
-      _getData();
+      getData();
+  }
+
+  dispose() {
+    _apiStreamController.close();
+    _dbStreamController.close();
   }
 }
+
+Api api = Api();

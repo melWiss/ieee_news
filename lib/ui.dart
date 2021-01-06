@@ -8,7 +8,7 @@ import 'art_details.dart';
 
 class StreamWidget<T> extends StatelessWidget {
   final Stream<T> stream;
-  final Function(T snap) widget;
+  final Widget Function(BuildContext context, T data) widget;
   const StreamWidget({
     this.stream,
     this.widget,
@@ -20,7 +20,7 @@ class StreamWidget<T> extends StatelessWidget {
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.hasData)
-          return widget(snapshot.data);
+          return widget(context, snapshot.data);
         else if (snapshot.hasError)
           return Center(
             child: Text("Error while loading data:\n${snapshot.error}"),
@@ -36,7 +36,7 @@ class StreamWidget<T> extends StatelessWidget {
 
 class FutureWidget<T> extends StatelessWidget {
   final Future<T> future;
-  final Function(T snap) widget;
+  final Widget Function(BuildContext context, T data) widget;
   const FutureWidget({
     this.future,
     this.widget,
@@ -48,7 +48,7 @@ class FutureWidget<T> extends StatelessWidget {
       future: future,
       builder: (context, snapshot) {
         if (snapshot.hasData)
-          return widget(snapshot.data);
+          return widget(context, snapshot.data);
         else if (snapshot.hasError)
           return Center(
             child: Text("Error while loading data:\n${snapshot.error}"),
@@ -67,11 +67,13 @@ class NewsCard extends StatelessWidget {
   final String title;
   final String details;
   final String url;
+  final Map data;
   NewsCard({
     this.title = "",
     this.imageUrl = "",
     this.details = "",
     this.url = "",
+    @required this.data,
   });
   @override
   Widget build(BuildContext context) {
@@ -85,6 +87,7 @@ class NewsCard extends StatelessWidget {
               imageUrl: imageUrl,
               details: details,
               url: url,
+              data: data,
             );
           }));
         },
