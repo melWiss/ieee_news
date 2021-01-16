@@ -37,7 +37,7 @@ class Api {
 
   Future<Map> fetchApi() async {
     _apiSink.add(null);
-    String url = 'http://newsapi.org/v2/top-headlines?' +
+    String url = 'https://newsapi.org/v2/top-headlines?' +
         'country=us&' +
         'apiKey=f599cb8706914e578b866c0d0dc58a4f';
     var response = await http.get(url);
