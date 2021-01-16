@@ -1,13 +1,20 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:ieee_news/api.dart';
 import 'package:ieee_news/ui.dart';
+import 'fire.dart';
+import 'sign.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+  var init = Firebase.initializeApp();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,7 +23,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: FutureWidget<FirebaseApp>(
+        future: init,
+        widget: (a, b) => StreamBuilder<User>(
+          stream: newsFirebase.auth.userChanges(),
+          builder: (_, user) {
+            if (user.hasData)
+              return HomePage();
+            else
+              return SignInScreen();
+          },
+        ),
+      ),
     );
   }
 }
@@ -34,13 +52,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     pageController = PageController(initialPage: index);
+    api.fetchApi();
   }
 
   @override
   void dispose() {
     //DONE: implement dispose
     super.dispose();
-    api.dispose();
+    // api.dispose();
   }
 
   @override
@@ -57,12 +76,24 @@ class _HomePageState extends State<HomePage> {
           Icons.account_box,
           color: Colors.blue,
         ),
+        actionsIconTheme: IconThemeData(
+          color: Colors.blue,
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              newsFirebase.logout();
+              // api.dispose();
+            },
+          ),
+        ],
       ),
       body: PageView(
         onPageChanged: (i) {
           setState(() {
             index = i;
-            api.switchData(index);
+            // api.switchData(index);
           });
         },
         controller: pageController,
@@ -74,10 +105,11 @@ class _HomePageState extends State<HomePage> {
                 return ListView.builder(
                     itemCount: data.length,
                     itemBuilder: (context, index) {
-                      var d = {
-                        data.keys.toList()[index]:
-                            data[data.keys.toList()[index]],
-                      };
+                      var d = data[data.keys.toList()[index]];
+                      // var d = {
+                      //   data.keys.toList()[index]:
+                      //       data[data.keys.toList()[index]],
+                      // };
                       return NewsCard(
                         details:
                             data[data.keys.toList()[index]]["content"] != null
@@ -103,33 +135,21 @@ class _HomePageState extends State<HomePage> {
                 );
             },
           ),
-          StreamWidget<Map>(
-            stream: api.dbStream,
+          StreamWidget<QuerySnapshot>(
+            // stream: api.dbStream,
+            stream: newsFirebase.streamUserArticles().snapshots(),
             widget: (context, data) {
-              if (data.isNotEmpty) {
+              if (data.size > 0) {
                 return ListView.builder(
-                    itemCount: data.length,
+                    itemCount: data.size,
                     itemBuilder: (context, index) {
-                      var d = {
-                        data.keys.toList()[index]:
-                            data[data.keys.toList()[index]],
-                      };
+                      var d = data.docs[index].data();
                       return NewsCard(
-                        details:
-                            data[data.keys.toList()[index]]["content"] != null
-                                ? data[data.keys.toList()[index]]["content"]
-                                : "",
-                        title: data[data.keys.toList()[index]]["title"] != null
-                            ? data[data.keys.toList()[index]]["title"]
-                            : "",
-                        imageUrl: data[data.keys.toList()[index]]
-                                    ["urlToImage"] !=
-                                null
-                            ? data[data.keys.toList()[index]]["urlToImage"]
-                            : "",
-                        url: data[data.keys.toList()[index]]["url"] != null
-                            ? data[data.keys.toList()[index]]["url"]
-                            : "",
+                        details: d["content"] != null ? d["content"] : "",
+                        title: d["title"] != null ? d["title"] : "",
+                        imageUrl:
+                            d["urlToImage"] != null ? d["urlToImage"] : "",
+                        url: d["url"] != null ? d["url"] : "",
                         data: d,
                       );
                     });
@@ -145,9 +165,10 @@ class _HomePageState extends State<HomePage> {
         selectedItemColor: Colors.blue,
         currentIndex: index,
         onTap: (value) {
+          api.fetchApi();
           setState(() {
             index = value;
-            api.switchData(index);
+            // api.switchData(index);
             pageController.animateToPage(index,
                 duration: Duration(milliseconds: 200),
                 curve: Curves.easeInOutExpo);

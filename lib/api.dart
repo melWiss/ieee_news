@@ -6,13 +6,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_io.dart';
-import 'package:sembast_web/sembast_web.dart';
+// import 'package:sembast/sembast.dart';
+// import 'package:sembast/sembast_io.dart';
+// import 'package:sembast_web/sembast_web.dart';
 
 class Api {
   Map _initApi = {};
-  Map _initDb = {};
+  // Map _initDb = {};
   // DONE: subdivide streamController into apiStreamController and dbStreamController
   StreamController<Map> _apiStreamController =
       StreamController<Map>.broadcast();
@@ -20,19 +20,19 @@ class Api {
   StreamSink<Map> get _apiSink => _apiStreamController.sink;
   Map get getCurrentApi => _initApi;
 
-  StreamController<Map> _dbStreamController = StreamController<Map>.broadcast();
-  Stream<Map> get dbStream => _dbStreamController.stream;
-  StreamSink<Map> get _dbSink => _dbStreamController.sink;
-  Map get getCurrentDb => _initDb;
+  // StreamController<Map> _dbStreamController = StreamController<Map>.broadcast();
+  // Stream<Map> get dbStream => _dbStreamController.stream;
+  // StreamSink<Map> get _dbSink => _dbStreamController.sink;
+  // Map get getCurrentDb => _initDb;
 
-  String _dbPath = 'articles.json';
-  DatabaseFactory _dbFactory = !kIsWeb ? databaseFactoryIo : databaseFactoryWeb;
+  // String _dbPath = 'articles.json';
+  // DatabaseFactory _dbFactory = !kIsWeb ? databaseFactoryIo : databaseFactoryWeb;
 
   Api() {
-    _dbSink.add(_initDb);
+    // _dbSink.add(_initDb);
     _apiSink.add(_initApi);
     fetchApi();
-    getData();
+    // getData();
   }
 
   Future<Map> fetchApi() async {
@@ -54,47 +54,47 @@ class Api {
   }
 
   //DONE: add a method to get data from database
-  Future<Map> getData() async {
-    _dbSink.add(null);
-    Database db = await _dbFactory.openDatabase(_dbPath);
-    var store = StoreRef.main();
-    var data = await store.record("data").get(db) as Map;
-    if (data == null) data = {};
-    _initDb = data;
-    _dbSink.add(_initDb);
-    return _initDb;
-  }
+  // Future<Map> getData() async {
+  //   _dbSink.add(null);
+  //   Database db = await _dbFactory.openDatabase(_dbPath);
+  //   var store = StoreRef.main();
+  //   var data = await store.record("data").get(db) as Map;
+  //   if (data == null) data = {};
+  //   _initDb = data;
+  //   _dbSink.add(_initDb);
+  //   return _initDb;
+  // }
 
   //DONE: add a method to add datat to database
-  Future<Map> addData(Map data, {bool merge = true}) async {
-    Database db = await _dbFactory.openDatabase(_dbPath);
-    var store = StoreRef.main();
-    await store.record("data").put(db, data, merge: merge);
-    return await getData();
-  }
+  // Future<Map> addData(Map data, {bool merge = true}) async {
+  //   Database db = await _dbFactory.openDatabase(_dbPath);
+  //   var store = StoreRef.main();
+  //   await store.record("data").put(db, data, merge: merge);
+  //   return await getData();
+  // }
 
   //DONE: add a method to delete data from database
-  Future<Map> deleteData(Map data) async {
-    Database db = await _dbFactory.openDatabase(_dbPath);
-    var store = StoreRef.main();
-    var saved = {};
-    saved.addAll(await store.record("data").get(db) as Map);
-    saved.remove(data.keys.first);
-    return await addData(saved, merge: false);
-  }
+  // Future<Map> deleteData(Map data) async {
+  //   Database db = await _dbFactory.openDatabase(_dbPath);
+  //   var store = StoreRef.main();
+  //   var saved = {};
+  //   saved.addAll(await store.record("data").get(db) as Map);
+  //   saved.remove(data.keys.first);
+  //   return await addData(saved, merge: false);
+  // }
 
   //DONE: add a data selector method
   ///use other streams instead
-  switchData(int index) {
-    if (index == 0)
-      fetchApi();
-    else
-      getData();
-  }
+  // switchData(int index) {
+  //   if (index == 0)
+  //     fetchApi();
+  //   else
+  //     getData();
+  // }
 
   dispose() {
     _apiStreamController.close();
-    _dbStreamController.close();
+    // _dbStreamController.close();
   }
 }
 
