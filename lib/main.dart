@@ -1,13 +1,20 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:ieee_news/api.dart';
+import 'package:ieee_news/fire.dart';
+import 'package:ieee_news/signin.dart';
 import 'package:ieee_news/ui.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,7 +23,36 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: FutureBuilder(
+        // Initialize FlutterFire:
+        future: _initialization,
+        builder: (context, snapshot) {
+          // Check for errors
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(snapshot.error),
+            );
+          }
+
+          // Once complete, show your application
+          if (snapshot.connectionState == ConnectionState.done) {
+            return StreamBuilder<User>(
+              stream: firebaseFunctions.auth.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData)
+                  return HomePage();
+                else
+                  return SignIn();
+              },
+            );
+          }
+
+          // Otherwise, show something whilst waiting for initialization to complete
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
     );
   }
 }
@@ -62,7 +98,6 @@ class _HomePageState extends State<HomePage> {
         onPageChanged: (i) {
           setState(() {
             index = i;
-            api.switchData(index);
           });
         },
         controller: pageController,
@@ -104,7 +139,6 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           StreamWidget<Map>(
-            stream: api.dbStream,
             widget: (context, data) {
               if (data.isNotEmpty) {
                 return ListView.builder(
@@ -147,7 +181,7 @@ class _HomePageState extends State<HomePage> {
         onTap: (value) {
           setState(() {
             index = value;
-            api.switchData(index);
+
             pageController.animateToPage(index,
                 duration: Duration(milliseconds: 200),
                 curve: Curves.easeInOutExpo);

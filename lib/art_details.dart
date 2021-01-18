@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ieee_news/api.dart';
+import 'package:ieee_news/fire.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'ui.dart';
@@ -19,26 +20,24 @@ class NewsDetail extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    api.getData();
+    print(data);
     return Scaffold(
       appBar: AppBar(
         //DONE: add a button to save the current article
         actions: [
-          StreamWidget<Map>(
-            stream: api.dbStream,
-            widget: (context, snap) {
-              if (snap.containsKey(url)) {
+          StreamWidget<bool>(
+            stream: firebaseFunctions.existOrNot(url),
+            widget: (context, exist) {
+              if (exist) {
                 return IconButton(
                   icon: Icon(Icons.save),
-                  onPressed: () {
-                    api.deleteData(data);
-                  },
+                  onPressed: () {},
                 );
               } else {
                 return IconButton(
                   icon: Icon(Icons.save_outlined),
                   onPressed: () {
-                    api.addData(data);
+                    firebaseFunctions.saveArticle(data[url]);
                   },
                 );
               }
