@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ieee_news/art_details.dart';
 
 class FirebaseFunctions {
   FirebaseAuth auth = FirebaseAuth.instance;
@@ -52,6 +53,40 @@ class FirebaseFunctions {
     } catch (e) {
       print(e.toString());
       return false;
+    }
+  }
+
+  Future<bool> deleteArticle(Map<String, dynamic> article) async {
+    try {
+      var ref = await firestore
+          .collection("articles")
+          .where("uid", isEqualTo: auth.currentUser.uid)
+          .where("url", isEqualTo: article["url"])
+          .get();
+      var refDoc = await ref.docs[0].reference.delete();
+      return true;
+    } catch (e) {
+      print(e.toString());
+      return false;
+    }
+  }
+
+  Stream<List<Map>> streamArticle() async* {
+    try {
+      var ref = await firestore
+          .collection("articles")
+          .where("uid", isEqualTo: auth.currentUser.uid)
+          .snapshots();
+      await for (var d in ref) {
+        List<Map> listNews = [];
+        d.docs.forEach((element) {
+          listNews.add(element.data());
+        });
+        yield listNews;
+      }
+    } catch (e) {
+      print(e.toString());
+      throw (e.toString());
     }
   }
 }

@@ -81,6 +81,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    api.fetchApi();
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -109,10 +110,7 @@ class _HomePageState extends State<HomePage> {
                 return ListView.builder(
                     itemCount: data.length,
                     itemBuilder: (context, index) {
-                      var d = {
-                        data.keys.toList()[index]:
-                            data[data.keys.toList()[index]],
-                      };
+                      var d = data[data.keys.toList()[index]];
                       return NewsCard(
                         details:
                             data[data.keys.toList()[index]]["content"] != null
@@ -138,31 +136,26 @@ class _HomePageState extends State<HomePage> {
                 );
             },
           ),
-          StreamWidget<Map>(
+          StreamWidget<List<Map>>(
+            stream: firebaseFunctions.streamArticle(),
             widget: (context, data) {
               if (data.isNotEmpty) {
                 return ListView.builder(
                     itemCount: data.length,
                     itemBuilder: (context, index) {
-                      var d = {
-                        data.keys.toList()[index]:
-                            data[data.keys.toList()[index]],
-                      };
+                      var d = data[index];
                       return NewsCard(
-                        details:
-                            data[data.keys.toList()[index]]["content"] != null
-                                ? data[data.keys.toList()[index]]["content"]
-                                : "",
-                        title: data[data.keys.toList()[index]]["title"] != null
-                            ? data[data.keys.toList()[index]]["title"]
+                        details: data[index]["content"] != null
+                            ? data[index]["content"]
                             : "",
-                        imageUrl: data[data.keys.toList()[index]]
-                                    ["urlToImage"] !=
-                                null
-                            ? data[data.keys.toList()[index]]["urlToImage"]
+                        title: data[index]["title"] != null
+                            ? data[index]["title"]
                             : "",
-                        url: data[data.keys.toList()[index]]["url"] != null
-                            ? data[data.keys.toList()[index]]["url"]
+                        imageUrl: data[index]["urlToImage"] != null
+                            ? data[index]["urlToImage"]
+                            : "",
+                        url: data[index]["url"] != null
+                            ? data[index]["url"]
                             : "",
                         data: d,
                       );

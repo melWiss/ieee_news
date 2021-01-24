@@ -31,13 +31,15 @@ class NewsDetail extends StatelessWidget {
               if (exist) {
                 return IconButton(
                   icon: Icon(Icons.save),
-                  onPressed: () {},
+                  onPressed: () {
+                    firebaseFunctions.deleteArticle(data);
+                  },
                 );
               } else {
                 return IconButton(
                   icon: Icon(Icons.save_outlined),
                   onPressed: () {
-                    firebaseFunctions.saveArticle(data[url]);
+                    firebaseFunctions.saveArticle(data);
                   },
                 );
               }
